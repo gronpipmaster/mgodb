@@ -11,6 +11,7 @@ import (
 )
 
 type User struct {
+	model        *mgodb.Model
 	Id           bson.ObjectId `bson:"_id,omitempty" json:"-"`
 	Username     string        `bson:"u"`
 	Password     string        `bson:"p,omitempty"`
@@ -18,10 +19,6 @@ type User struct {
 	Email        string        `bson:"e,omitempty"`
 	Adm          bool          `bson:"a,omitempty"`
 	Created      int64         `bson:"c,omitempty"`
-}
-
-func (self *User) Collection(_ mgodb.DbExecutor) string {
-	return "users"
 }
 
 func (self *User) String() string {
@@ -52,7 +49,7 @@ func ValidatePassword(v *revel.Validation, password string) *revel.ValidationRes
 	)
 }
 
-func (self *User) PreInsert(_ mgodb.DbExecutor) error {
+func (self *User) PreInsert() error {
 	var err error
 	self.PasswordHash, err = bcrypt.GenerateFromPassword([]byte(self.Password), bcrypt.DefaultCost)
 	if err != nil {
@@ -63,7 +60,7 @@ func (self *User) PreInsert(_ mgodb.DbExecutor) error {
 	return nil
 }
 
-func (self *User) PreUpdate(_ mgodb.DbExecutor) error {
+func (self *User) PreUpdate() error {
 	var err error
 	if self.Password == "" {
 		return nil
@@ -74,4 +71,21 @@ func (self *User) PreUpdate(_ mgodb.DbExecutor) error {
 	}
 	self.Password = ""
 	return nil
+}
+
+//System methods all required
+func (self *User) CollectionName() string {
+	return "users"
+}
+
+func (self *User) GetId() bson.ObjectId {
+	return self.Id
+}
+
+func (self *User) Save() error {
+	return self.model.Save(mgodb.ModelInterface(self), self)
+}
+
+func (self *User) Delete() error {
+	return self.model.Delete(mgodb.ModelInterface(self), self)
 }

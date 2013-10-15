@@ -1,29 +1,35 @@
 Mgodb
 =====
 
-Orm for mongodb, wrapper from labix.org/v2/mgo
+Orm for mongodb, wrapper from http://labix.org/v2/mgo
 Example usage in http://robfig.github.io/revel/ framework see example/init.revel.go and example/model.revel.go, support hooks,
 
-    func (self *SomeModelName) PreInsert(_ mgodb.DbExecutor) error {}
-    func (self *SomeModelName) PostInsert(_ mgodb.DbExecutor) error {}
-    func (self *SomeModelName) PreUpdate(_ mgodb.DbExecutor) error {}
-    func (self *SomeModelName) PostUpdate(_ mgodb.DbExecutor) error {}
-    func (self *SomeModelName) PreDelete(_ mgodb.DbExecutor) error {}
-    func (self *SomeModelName) PostDelete(_ mgodb.DbExecutor) error {}
+    func (self *SomeModelName) PreInsert() error {}
+    func (self *SomeModelName) PostInsert() error {}
+    func (self *SomeModelName) PreUpdate() error {}
+    func (self *SomeModelName) PostUpdate() error {}
+    func (self *SomeModelName) PreDelete() error {}
+    func (self *SomeModelName) PostDelete() error {}
 
 Example usage default CRUD:
 
-    err = Dbm.Insert(&models.SomeModelName{Username: "Ale", Password: "+55 53 8116 9639"},
-    &models.SomeModelName{Username: "Cla", Password: "+55 53 8402 8510"})
+    var err error
+    user := &models.User{}
+    user.Username = "Bar"
+    user.Password = "ssdf"
+    err = user.Save() //Insert object
     if err != nil {
-      fmt.Fatal(err)
+        fmt.Fatal(err.Error())
     }
-
-    var results []models.SomeModelName
-    err = Dbm.Find("users", bson.M{"u": "Ale"}).All(&results)// All methods support from http://godoc.org/labix.org/v2/mgo#Collection.Find
+    fmt.Println(user)
+    user.Username = "Foo"
+    err = user.Save() //Update object
     if err != nil {
-      fmt.Fatal(err)
+        fmt.Fatal(err.Error())
     }
-
-    fmt.Println("Result:", results)
+    err = user.Delete() //Delete object
+    if err != nil {
+        fmt.Fatal(err.Error())
+    }
+    fmt.Println(user)
 

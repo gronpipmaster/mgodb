@@ -11,17 +11,15 @@ import (
 	"time"
 )
 
-var Dbm *mgodb.Dbm
-
 func init() {
 	revel.OnAppStart(AppStart)
 }
 
 func AppStart() {
-	var db mgodb.Dbm
+	var dbm *mgodb.Dbm
 	var err error
 	connectUrl, dbName, timeout := getConnectUrlDb()
-	Dbm, err = db.Init(connectUrl, dbName, timeout)
+	err = dbm.Init(connectUrl, dbName, timeout)
 	if err != nil {
 		revel.ERROR.Fatal(err)
 	}
