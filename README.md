@@ -1,29 +1,45 @@
 Mgodb
 =====
 
-Orm for mongodb, wrapper from labix.org/v2/mgo
-Example usage in http://robfig.github.io/revel/ framework see example/init.revel.go and example/model.revel.go, support hooks,
+Orm for mongodb, wrapper from http://labix.org/v2/mgo
+Example usage in http://robfig.github.io/revel/ framework see example/init.revel.go and example/model.revel.go, support hooks concept from https://github.com/coopernurse/gorp
 
-    func (self *SomeModelName) PreInsert(_ mgodb.DbExecutor) error {}
-    func (self *SomeModelName) PostInsert(_ mgodb.DbExecutor) error {}
-    func (self *SomeModelName) PreUpdate(_ mgodb.DbExecutor) error {}
-    func (self *SomeModelName) PostUpdate(_ mgodb.DbExecutor) error {}
-    func (self *SomeModelName) PreDelete(_ mgodb.DbExecutor) error {}
-    func (self *SomeModelName) PostDelete(_ mgodb.DbExecutor) error {}
+### CRUD ###
 
 Example usage default CRUD:
+```go
+var err error
+user := models.NewUser()
+user.Username = "Bar"
+user.Password = "ssdf"
+err = user.Save() //Insert object
+if err != nil {
+    panic(err)
+}
+fmt.Println(user)
+user.Username = "Foo"
+err = user.Save() //Update object
+if err != nil {
+    panic(err)
+}
+err = user.Delete() //Delete object
+if err != nil {
+    panic(err)
+}
+fmt.Println(user)
+```
 
-    err = Dbm.Insert(&models.SomeModelName{Username: "Ale", Password: "+55 53 8116 9639"},
-    &models.SomeModelName{Username: "Cla", Password: "+55 53 8402 8510"})
-    if err != nil {
-      fmt.Fatal(err)
-    }
+### Hooks ###
 
-    var results []models.SomeModelName
-    err = Dbm.Find("users", bson.M{"u": "Ale"}).All(&results)// All methods support from http://godoc.org/labix.org/v2/mgo#Collection.Find
-    if err != nil {
-      fmt.Fatal(err)
-    }
+Use hooks to before/after saving/delete to the db.
+```go
+//Full list of hooks that you can implement:
+func (self *SomeModelName) BeforeInsert() error {}
+func (self *SomeModelName) AfterInsert() error {}
 
-    fmt.Println("Result:", results)
+func (self *SomeModelName) BeforeUpdate() error {}
+func (self *SomeModelName) AfterUpdate() error {}
 
+func (self *SomeModelName) BeforeDelete() error {}
+func (self *SomeModelName) AfterDelete() error {}
+```

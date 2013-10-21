@@ -10,18 +10,39 @@ import (
 	"time"
 )
 
-type User struct {
-	Id           bson.ObjectId `bson:"_id,omitempty" json:"-"`
-	Username     string        `bson:"u"`
-	Password     string        `bson:"p,omitempty"`
-	PasswordHash []byte        `bson:"ph,omitempty"`
-	Email        string        `bson:"e,omitempty"`
-	Adm          bool          `bson:"a,omitempty"`
-	Created      int64         `bson:"c,omitempty"`
+//System methods all required
+
+//Get collection name
+func (self *User) GetCName() string {
+	return "users"
 }
 
-func (self *User) Collection(_ mgodb.DbExecutor) string {
-	return "users"
+//Get document id
+func (self *User) GetId() string {
+	return self.Id.Hex()
+}
+
+//Construct and implemend mgodb.Model
+func NewUser() *User {
+	user := new(User)
+	user.Id = bson.NewObjectId()
+	user.SetDoc(user)
+	return user
+}
+
+//End system methods
+
+type User struct {
+	//Required
+	mgodb.Model `,inline`
+	//Required
+	Id           bson.ObjectId `bson:"_id,omitempty" 	json:"Id,omitempty"`
+	Username     string        `bson:"u,omitempty"		json:"Username,omitempty"`
+	Password     string        `bson:"p,omitempty" 		json:"-,omitempty"`
+	PasswordHash []byte        `bson:"ph,omitempty" 	json:"-,omitempty"`
+	Email        string        `bson:"e,omitempty" 		json:"Email,omitempty"`
+	Adm          bool          `bson:"a,omitempty" 		json:"Adm,omitempty"`
+	Created      int64         `bson:"c,omitempty" 		json:"Created,omitempty"`
 }
 
 func (self *User) String() string {
@@ -52,7 +73,7 @@ func ValidatePassword(v *revel.Validation, password string) *revel.ValidationRes
 	)
 }
 
-func (self *User) PreInsert(_ mgodb.DbExecutor) error {
+func (self *User) BeforeInsert() error {
 	var err error
 	self.PasswordHash, err = bcrypt.GenerateFromPassword([]byte(self.Password), bcrypt.DefaultCost)
 	if err != nil {
@@ -63,7 +84,7 @@ func (self *User) PreInsert(_ mgodb.DbExecutor) error {
 	return nil
 }
 
-func (self *User) PreUpdate(_ mgodb.DbExecutor) error {
+func (self *User) BeforeUpdate() error {
 	var err error
 	if self.Password == "" {
 		return nil
