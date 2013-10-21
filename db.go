@@ -27,10 +27,10 @@ func (self *Dbm) Init(connectUrl string, dbName string, timeout time.Duration) e
 	var session *mgo.Session
 	DbmInstance = &Dbm{}
 	session, err = mgo.DialWithTimeout(connectUrl, timeout*time.Second)
-	session.SetMode(mgo.Monotonic, true)
 	if err != nil {
 		return errors.New(fmt.Sprintf("Could not connect to %s: %s.", connectUrl, err.Error()))
 	}
+	session.SetMode(mgo.Monotonic, true)
 	DbmInstance.Database = session.DB(dbName)
 	return nil
 }
@@ -39,92 +39,50 @@ func (self *Dbm) Find(collectionName string, query interface{}) *mgo.Query {
 	return self.getCollection(collectionName).Find(query)
 }
 
-func (self *Dbm) Insert(docs ...interface{}) error {
+func (self *Dbm) Insert(collectionName string, doc interface{}) error {
 	var err error
-	var elem reflect.Value
-	var collectionName string
-	for _, doc := range docs {
-		elem, err = self.getPointer(doc)
-		if err != nil {
-			return err
-		}
-		eptr := elem.Addr()
-		collectionName, err = getCollectionName(eptr)
-		if err != nil {
-			return err
-		}
-		err = runHook("PreInsert", eptr)
-		if err != nil {
-			return err
-		}
-		err = self.getCollection(collectionName).Insert(doc)
-		if err != nil {
-			return err
-		}
-		err = runHook("PostInsert", eptr)
-		if err != nil {
-			return err
-		}
-	}
-	return nil
-}
-
-func (self *Dbm) Update(Id bson.ObjectId, doc interface{}) error {
-	var err error
-	var elem reflect.Value
-	var collectionName string
-	elem, err = self.getPointer(doc)
-	if err != nil {
+	if err = runHook("BeforeInsert", doc); err != nil {
 		return err
 	}
-	eptr := elem.Addr()
-	err = runHook("PreUpdate", eptr)
-	if err != nil {
+	if err = self.getCollection(collectionName).Insert(doc); err != nil {
 		return err
 	}
-	collectionName, err = getCollectionName(eptr)
-	if err != nil {
-		return err
-	}
-	//TODO auto change all fieds
-	change := bson.M{}
-	err = self.getCollection(collectionName).UpdateId(bson.M{"_id": Id}, change)
-	if err != nil {
-		return err
-	}
-	err = runHook("PostUpdate", eptr)
-	if err != nil {
+	if err = runHook("AfterInsert", doc); err != nil {
 		return err
 	}
 	return nil
 }
 
-func (self *Dbm) Delete(Id bson.ObjectId, doc interface{}) error {
+func (self *Dbm) Update(collectionName, id string, doc interface{}) error {
 	var err error
-	var elem reflect.Value
-	var collectionName string
-	elem, err = self.getPointer(doc)
-	if err != nil {
+	if err = runHook("BeforeUpdate", doc); err != nil {
 		return err
 	}
-	eptr := elem.Addr()
-	err = runHook("PreDelete", eptr)
-	if err != nil {
+	if err = self.getCollection(collectionName).UpdateId(bson.ObjectIdHex(id), doc); err != nil {
 		return err
 	}
-	collectionName, err = getCollectionName(eptr)
-	if err != nil {
-		return err
-	}
-	err = self.getCollection(collectionName).RemoveId(bson.M{"_id": Id})
-	if err != nil {
-		return err
-	}
-	err = runHook("PostDelete", eptr)
-	if err != nil {
+	if err = runHook("AfterUpdate", doc); err != nil {
 		return err
 	}
 	return nil
+}
+
+func (self *Dbm) Delete(collectionName, id string, doc interface{}) error {
+	var err error
+	if err = runHook("BeforeDelete", doc); err != nil {
+		return err
+	}
+	if err = self.getCollection(collectionName).RemoveId(bson.ObjectIdHex(id)); err != nil {
+		return err
+	}
+	if err = runHook("AfterDelete", doc); err != nil {
+		return err
+	}
+	return nil
+}
+
+func (self *Dbm) InsertAll(collectionName string, docs ...interface{}) error {
+	return self.getCollection(collectionName).Insert(docs)
 }
 
 func (self *Dbm) UpdateAll(collectionName string, selector interface{}, change interface{}) (*mgo.ChangeInfo, error) {
@@ -147,35 +105,19 @@ func (self *Dbm) getCollection(collectionName string) *mgo.Collection {
 	return self.Database.C(collectionName)
 }
 
-func (self *Dbm) getPointer(doc interface{}) (reflect.Value, error) {
+func runHook(name string, doc interface{}) error {
 	docV := reflect.ValueOf(doc)
 	if docV.Kind() != reflect.Ptr {
-		e := fmt.Sprintf("mgodb.Dbm: passed non-pointer: %v (kind=%v)", doc,
+		e := fmt.Sprintf("mgodb.Dbm: Passed non-pointer: %v (kind=%v)", doc,
 			docV.Kind())
-		return reflect.Value{}, errors.New(e)
+		return errors.New(e)
 	}
-	elem := docV.Elem()
-	return elem, nil
-}
-
-func runHook(name string, eptr reflect.Value) error {
-	hook := eptr.MethodByName(name)
-	if hook != zeroVal {
-		ret := hook.Call(zeroArgs)
+	fn := docV.Elem().Addr().MethodByName(name)
+	if fn != zeroVal {
+		ret := fn.Call(zeroArgs)
 		if len(ret) > 0 && !ret[0].IsNil() {
 			return ret[0].Interface().(error)
 		}
 	}
 	return nil
-}
-
-func getCollectionName(eptr reflect.Value) (string, error) {
-	fn := eptr.MethodByName("CollectionName")
-	if fn != zeroVal {
-		ret := fn.Call(zeroArgs)
-		if len(ret) > 0 && ret[0].String() != "" {
-			return ret[0].String(), nil
-		}
-	}
-	return "", errors.New(fmt.Sprintf("get Collection:%s err.", eptr.Type().String()))
 }

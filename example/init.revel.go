@@ -48,6 +48,9 @@ func getConnectUrlDb() (string, string, time.Duration) {
 	if dbName, found = revel.Config.String("mongo.db"); !found {
 		revel.ERROR.Fatal("No mongo.db found.")
 	}
+	connURL.Host = fmt.Sprintf("%s:%s", host, port)
+	connURL.User = url.UserPassword(user, pass)
+	connURL.Path = "/" + dbName
 	if timeoutStr, found = revel.Config.String("mongo.timeout"); !found {
 		timeoutStr = "5s"
 	}
@@ -55,9 +58,5 @@ func getConnectUrlDb() (string, string, time.Duration) {
 	if err != nil {
 		revel.ERROR.Fatal("mongo.timeout found error, ", err.Error())
 	}
-
-	connURL.Host = fmt.Sprintf("%s:%s", host, port)
-	connURL.User = url.UserPassword(user, pass)
-	connURL.Path = "/" + dbName
 	return connURL.String(), dbName, timeout
 }
