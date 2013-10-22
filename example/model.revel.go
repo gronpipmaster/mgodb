@@ -22,6 +22,17 @@ func (self *User) GetId() string {
 	return self.Id.Hex()
 }
 
+//load and construct model
+func FindUser(id string) (*User, error) {
+	user := NewUser()
+	err := user.FindByPk(id, &user)
+	if err != nil {
+		return nil, err
+	}
+	user.ReloadDoc(user)
+	return user, nil
+}
+
 //Construct and implemend mgodb.Model
 func NewUser() *User {
 	user := new(User)

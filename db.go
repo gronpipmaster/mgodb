@@ -41,13 +41,13 @@ func (self *Dbm) Find(collectionName string, query interface{}) *mgo.Query {
 
 func (self *Dbm) Insert(collectionName string, doc interface{}) error {
 	var err error
-	if err = runHook("BeforeInsert", doc); err != nil {
+	if err = callToDoc("BeforeInsert", doc); err != nil {
 		return err
 	}
 	if err = self.getCollection(collectionName).Insert(doc); err != nil {
 		return err
 	}
-	if err = runHook("AfterInsert", doc); err != nil {
+	if err = callToDoc("AfterInsert", doc); err != nil {
 		return err
 	}
 	return nil
@@ -55,13 +55,13 @@ func (self *Dbm) Insert(collectionName string, doc interface{}) error {
 
 func (self *Dbm) Update(collectionName, id string, doc interface{}) error {
 	var err error
-	if err = runHook("BeforeUpdate", doc); err != nil {
+	if err = callToDoc("BeforeUpdate", doc); err != nil {
 		return err
 	}
 	if err = self.getCollection(collectionName).UpdateId(bson.ObjectIdHex(id), doc); err != nil {
 		return err
 	}
-	if err = runHook("AfterUpdate", doc); err != nil {
+	if err = callToDoc("AfterUpdate", doc); err != nil {
 		return err
 	}
 	return nil
@@ -69,13 +69,13 @@ func (self *Dbm) Update(collectionName, id string, doc interface{}) error {
 
 func (self *Dbm) Delete(collectionName, id string, doc interface{}) error {
 	var err error
-	if err = runHook("BeforeDelete", doc); err != nil {
+	if err = callToDoc("BeforeDelete", doc); err != nil {
 		return err
 	}
 	if err = self.getCollection(collectionName).RemoveId(bson.ObjectIdHex(id)); err != nil {
 		return err
 	}
-	if err = runHook("AfterDelete", doc); err != nil {
+	if err = callToDoc("AfterDelete", doc); err != nil {
 		return err
 	}
 	return nil
@@ -105,14 +105,13 @@ func (self *Dbm) getCollection(collectionName string) *mgo.Collection {
 	return self.Database.C(collectionName)
 }
 
-func runHook(name string, doc interface{}) error {
+func callToDoc(method string, doc interface{}) error {
 	docV := reflect.ValueOf(doc)
 	if docV.Kind() != reflect.Ptr {
-		e := fmt.Sprintf("mgodb.Dbm: Passed non-pointer: %v (kind=%v)", doc,
-			docV.Kind())
+		e := fmt.Sprintf("mgodb.Dbm: Passed non-pointer: %v (kind=%v), method:%s", doc, docV.Kind(), method)
 		return errors.New(e)
 	}
-	fn := docV.Elem().Addr().MethodByName(name)
+	fn := docV.Elem().Addr().MethodByName(method)
 	if fn != zeroVal {
 		ret := fn.Call(zeroArgs)
 		if len(ret) > 0 && !ret[0].IsNil() {
