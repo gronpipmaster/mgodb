@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"labix.org/v2/mgo"
+	"labix.org/v2/mgo/bson"
 	"reflect"
 )
 
@@ -11,12 +12,39 @@ type Model struct {
 	doc            interface{}
 	collectionName string
 	docId          string
-	insert         bool
+	isNew          bool
 }
 
 func (self *Model) SetDoc(doc interface{}) {
+	self.isNew = true
 	self.doc = doc
-	self.insert = false
+}
+
+func (self *Model) ReloadDoc(doc interface{}) {
+	self.isNew = false
+	self.doc = doc
+}
+
+func (self *Model) FindByPk(id string, doc interface{}) error {
+	var err error
+	if err := self.setValues(); err != nil {
+		return err
+	}
+	var result interface{}
+	err = DbmInstance.Find(self.collectionName, bson.M{"_id": bson.ObjectIdHex(id)}).One(&result)
+	if err != nil {
+		return err
+	}
+	var tmpResult []byte
+	tmpResult, err = bson.Marshal(result)
+	if err != nil {
+		return err
+	}
+	err = bson.Unmarshal(tmpResult, doc) //merge result from doc
+	if err != nil {
+		return err
+	}
+	return nil
 }
 
 func (self *Model) Find(query interface{}) (*mgo.Query, error) {
@@ -31,14 +59,14 @@ func (self *Model) Save() error {
 	if err = self.setValues(); err != nil {
 		return err
 	}
-	if self.insert {
+	if !self.isNew {
 		return DbmInstance.Update(self.collectionName, self.docId, self.doc)
 	} else {
 		err = DbmInstance.Insert(self.collectionName, self.doc)
 		if err != nil {
 			return err
 		}
-		self.insert = true
+		self.isNew = false
 		return nil
 	}
 }
@@ -52,19 +80,18 @@ func (self *Model) Delete() error {
 
 func (self *Model) setValues() error {
 	var err error
-	self.collectionName, err = self.getFromMtdName("GetCName")
-	if err != nil {
-		return err
-	}
 	if self.collectionName == "" {
-		return errors.New("mdodb.Model: Collection name is empty.")
+		self.collectionName, err = self.getFromMtdName("GetCName")
+		if err != nil {
+			return err
+		}
+		if self.collectionName == "" {
+			return errors.New("mdodb.Model: Collection name is empty.")
+		}
 	}
 	self.docId, err = self.getFromMtdName("GetId")
 	if err != nil {
 		return err
-	}
-	if self.docId == "" {
-		return errors.New("mdodb.Model: Document id is empty.")
 	}
 	return nil
 }
@@ -72,8 +99,7 @@ func (self *Model) setValues() error {
 func (self *Model) getFromMtdName(method string) (string, error) {
 	docV := reflect.ValueOf(self.doc)
 	if docV.Kind() != reflect.Ptr {
-		e := fmt.Sprintf("mgodb.Model: Passed non-pointer: %v (kind=%v)", self.doc,
-			docV.Kind())
+		e := fmt.Sprintf("mgodb.Model: Passed non-pointer: %v (kind=%v), method:%s", self.doc, docV.Kind(), method)
 		return "", errors.New(e)
 	}
 	fn := docV.Elem().Addr().MethodByName(method)

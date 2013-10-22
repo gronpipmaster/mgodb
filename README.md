@@ -1,8 +1,8 @@
 Mgodb
 =====
 
-Orm for mongodb, wrapper from http://labix.org/v2/mgo
-Example usage in http://robfig.github.io/revel/ framework see example/init.revel.go and example/model.revel.go, support hooks concept from https://github.com/coopernurse/gorp
+Orm Active Record http://en.wikipedia.org/wiki/ActiveRecord for mongodb, wrapper from http://labix.org/v2/mgo
+Example usage in framework http://robfig.github.io/revel/ see example/init.revel.go and example/model.revel.go, support hooks concept from https://github.com/coopernurse/gorp
 
 ### CRUD ###
 
@@ -22,11 +22,22 @@ err = user.Save() //Update object
 if err != nil {
     panic(err)
 }
-err = user.Delete() //Delete object
+fmt.Println(user)
+loadUser, err := models.FindUser(user.GetId()) //Get object
 if err != nil {
     panic(err)
 }
-fmt.Println(user)
+fmt.Println(loadUser)
+loadUser.Username = "NewFoo"
+err = loadUser.Save() //Update object
+if err != nil {
+    panic(err)
+}
+fmt.Println(loadUser)
+err = loadUser.Delete() //Delete object
+if err != nil {
+    panic(err)
+}
 ```
 
 ### Hooks ###
