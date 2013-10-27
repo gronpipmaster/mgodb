@@ -22,23 +22,62 @@ func (self *User) GetId() string {
 	return self.Id.Hex()
 }
 
-//load and construct model
-func FindUser(id string) (*User, error) {
-	user := NewUser()
-	err := user.FindByPk(id, &user)
-	if err != nil {
+//get count
+func CountUsers(findUsers *User) (n int, err error) {
+	model := new(User)
+	model.SetDoc(model)
+	if n, err = model.Count(findUsers); err != nil {
+		return 0, err
+	}
+	return n, nil
+}
+
+//load and construct models by any fields
+func FindUsers(query mgodb.Query) ([]*User, error) {
+	model := new(User)
+	model.SetDoc(model)
+	var users []*User
+	if err := model.FindAll(query, &users); err != nil {
 		return nil, err
 	}
-	user.ReloadDoc(user)
-	return user, nil
+	if len(users) == 0 {
+		return nil, nil
+	}
+	for key, item := range users {
+		item.ReloadDoc(item)
+		users[key] = item
+	}
+	return users, nil
+}
+
+//load and construct model by any fields
+func FindUserBy(findUser *User) (*User, error) {
+	model := new(User)
+	model.SetDoc(model)
+	if err := model.FindOne(findUser, &model); err != nil {
+		return nil, err
+	}
+	model.ReloadDoc(model)
+	return model, nil
+}
+
+//load and construct model by id
+func FindUser(id string) (*User, error) {
+	model := new(User)
+	model.SetDoc(model)
+	if err := model.FindByPk(id, &model); err != nil {
+		return nil, err
+	}
+	model.ReloadDoc(model)
+	return model, nil
 }
 
 //Construct and implemend mgodb.Model
 func NewUser() *User {
-	user := new(User)
-	user.Id = bson.NewObjectId()
-	user.SetDoc(user)
-	return user
+	model := new(User)
+	model.Id = bson.NewObjectId()
+	model.SetDoc(model)
+	return model
 }
 
 //End system methods
