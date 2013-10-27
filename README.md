@@ -39,6 +39,45 @@ if err != nil {
     panic(err)
 }
 ```
+### More examples ###
+
+Example search one by field "Username" = "Foo":
+```go
+user, err := models.FindUserBy(&models.User{Username: "Foo"})
+if err != nil {
+  panic(err)
+}
+fmt.Println(user.GetId())//Get object
+user.Username = "Bar"
+err = user.Save() //Update object
+if err != nil {
+  panic(err)
+}
+fmt.Println(user.GetId())
+```
+Example get count by field "Username" = "Foo":
+```go
+count, err := models.CountUsers(&models.User{Username: "Foo"})
+if err != nil {
+  panic(err)
+}
+fmt.Println(count)
+```
+Example get all by field "Username" = "Bar":
+```go
+query := mgodb.Query{QueryDoc: &models.User{Username: "Bar"}, Limit: 0, Skip: 0}
+users, err := models.FindUsers(query) //Get users
+if err != nil {
+  panic(err)
+}
+for _, item := range users {
+  item.Username = "Foo"
+  if err = item.Save(); err != nil { //Update users
+    panic(err)
+  }
+}
+```
+
 
 ### Hooks ###
 
