@@ -9,9 +9,27 @@ import (
 )
 
 type Query struct {
-	QueryDoc interface{}
-	Limit    int
-	Skip     int
+	QueryDoc   interface{}
+	Limit      int
+	Skip       int
+	sortFields []string
+}
+
+// Example:
+// 	query := mgodb.Query{QueryDoc: &models.User{}}
+// 	query.SetSort(&models.User{Created: 0})
+// 	users, err := models.FindUsers(query)
+// http://godoc.org/labix.org/v2/mgo#Query.Sort
+func (self *Query) SetSort(doc interface{}) (err error) {
+	bsonData, err := docToBson(doc)
+	if err != nil {
+		return
+	}
+	for key, _ := range bsonData {
+		self.sortFields = append(self.sortFields, key)
+	}
+	return nil
+
 }
 
 type Model struct {
@@ -41,6 +59,9 @@ func (self *Model) FindAll(query Query, docs interface{}) (err error) {
 	}
 	if query.Limit > 0 {
 		mgoQuery.Limit(query.Limit)
+	}
+	if len(query.sortFields) > 0 {
+		mgoQuery.Sort(query.sortFields...)
 	}
 	return mgoQuery.All(docs)
 }
@@ -101,13 +122,13 @@ func (self *Model) getQueryByFields(queryDoc interface{}) (*mgo.Query, error) {
 	}
 	var query bson.M
 	var err error
-	if query, err = self.makeQuery(queryDoc); err != nil {
+	if query, err = docToBson(queryDoc); err != nil {
 		return nil, err
 	}
 	return DbmInstance.Find(self.collectionName, query), nil
 }
 
-func (self *Model) makeQuery(doc interface{}) (bson.M, error) {
+func docToBson(doc interface{}) (bson.M, error) {
 	var bsonData bson.M
 	var tmpBlob []byte
 	var err error
@@ -121,17 +142,6 @@ func (self *Model) makeQuery(doc interface{}) (bson.M, error) {
 		return bsonData, err
 	}
 	return bsonData, nil
-}
-
-func (self *Model) mergeResult(result interface{}, doc interface{}) (err error) {
-	var tmpResult []byte
-	if tmpResult, err = bson.Marshal(result); err != nil {
-		return err
-	}
-	if err = bson.Unmarshal(tmpResult, doc); err != nil {
-		return err
-	}
-	return nil
 }
 
 func (self *Model) setValues() (err error) {
