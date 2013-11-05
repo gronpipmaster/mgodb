@@ -122,6 +122,9 @@ func (self *Model) getQueryByFields(queryDoc interface{}) (*mgo.Query, error) {
 	}
 	var query bson.M
 	var err error
+	if reflect.ValueOf(queryDoc).IsNil() {
+		queryDoc = self.doc
+	}
 	if query, err = docToBson(queryDoc); err != nil {
 		return nil, err
 	}
