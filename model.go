@@ -15,18 +15,23 @@ type Query struct {
 	sortFields []string
 }
 
+var (
+	SortedDesc string = "-"
+	SortedAsk  string = ""
+)
+
 // Example:
 // 	query := mgodb.Query{QueryDoc: &models.User{}}
 // 	query.SetSort(&models.User{Created: 0})
 // 	users, err := models.FindUsers(query)
 // http://godoc.org/labix.org/v2/mgo#Query.Sort
-func (self *Query) SetSort(doc interface{}) (err error) {
+func (self *Query) SetSort(doc interface{}, sorted string) (err error) {
 	bsonData, err := docToBson(doc)
 	if err != nil {
 		return
 	}
 	for key, _ := range bsonData {
-		self.sortFields = append(self.sortFields, key)
+		self.sortFields = append(self.sortFields, sorted+key)
 	}
 	return nil
 
@@ -131,10 +136,8 @@ func (self *Model) getQueryByFields(queryDoc interface{}) (*mgo.Query, error) {
 	return DbmInstance.Find(self.collectionName, query), nil
 }
 
-func docToBson(doc interface{}) (bson.M, error) {
-	var bsonData bson.M
+func docToBson(doc interface{}) (bsonData bson.M, err error) {
 	var tmpBlob []byte
-	var err error
 	if bsonDoc, ok := doc.(bson.M); ok {
 		return bsonDoc, nil
 	}
