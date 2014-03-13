@@ -1,6 +1,7 @@
 package mgodb
 
 import (
+	"encoding/hex"
 	"errors"
 	"fmt"
 	"labix.org/v2/mgo"
@@ -58,7 +59,7 @@ func (self *Dbm) Update(collectionName, id string, doc interface{}) error {
 	if err = callToDoc("BeforeUpdate", doc); err != nil {
 		return err
 	}
-	if err = self.GetCollection(collectionName).UpdateId(bson.ObjectIdHex(id), doc); err != nil {
+	if err = self.GetCollection(collectionName).UpdateId(ObjectIdHex(id), doc); err != nil {
 		return err
 	}
 	if err = callToDoc("AfterUpdate", doc); err != nil {
@@ -72,7 +73,7 @@ func (self *Dbm) Delete(collectionName, id string, doc interface{}) error {
 	if err = callToDoc("BeforeDelete", doc); err != nil {
 		return err
 	}
-	if err = self.GetCollection(collectionName).RemoveId(bson.ObjectIdHex(id)); err != nil {
+	if err = self.GetCollection(collectionName).RemoveId(ObjectIdHex(id)); err != nil {
 		return err
 	}
 	if err = callToDoc("AfterDelete", doc); err != nil {
@@ -119,4 +120,9 @@ func callToDoc(method string, doc interface{}) error {
 		}
 	}
 	return nil
+}
+
+func ObjectIdHex(s string) bson.ObjectId {
+	d, _ := hex.DecodeString(s)
+	return bson.ObjectId(d)
 }
