@@ -54,6 +54,29 @@ func (self *Model) ReloadDoc(doc interface{}) {
 	self.doc = doc
 }
 
+func (self *Model) MergeDoc(docOld interface{}, docNew interface{}) error {
+	self.ReloadDoc(docOld)
+	if err := self.setValues(); err != nil {
+		return err
+	}
+	oldDocBson, err := docToBson(docOld)
+	if err != nil {
+		return err
+	}
+	newDocBson, err := docToBson(docNew)
+	if err != nil {
+		return err
+	}
+	for field, value := range newDocBson {
+		if self.isEmpty(value) {
+			continue
+		}
+		oldDocBson[field] = value
+	}
+	self.ReloadDoc(oldDocBson)
+	return DbmInstance.GetCollection(self.collectionName).UpdateId(bson.ObjectIdHex(self.docId), self.doc)
+}
+
 func (self *Model) FindAll(query Query, docs interface{}) (err error) {
 	var mgoQuery *mgo.Query
 	if mgoQuery, err = self.getQueryByFields(query.QueryDoc); err != nil {
@@ -179,4 +202,14 @@ func (self *Model) getFromMtdName(method string) (string, error) {
 		}
 	}
 	return "", nil
+}
+
+func (self *Model) isEmpty(obj interface{}) bool {
+	if obj == nil {
+		return true
+	}
+	if i, ok := obj.(int); ok {
+		return i == 0
+	}
+	return false
 }
