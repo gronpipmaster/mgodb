@@ -74,7 +74,7 @@ func (self *Model) MergeDoc(docOld interface{}, docNew interface{}) error {
 		oldDocBson[field] = value
 	}
 	self.ReloadDoc(oldDocBson)
-	return DbmInstance.GetCollection(self.collectionName).UpdateId(bson.ObjectIdHex(self.docId), self.doc)
+	return DbmInstance.GetCollection(self.collectionName).UpdateId(ObjectIdHex(self.docId), self.doc)
 }
 
 func (self *Model) FindAll(query Query, docs interface{}) (err error) {
@@ -103,7 +103,7 @@ func (self *Model) FindOne(queryDoc interface{}, doc interface{}) (err error) {
 }
 
 func (self *Model) FindByPk(id string, doc interface{}) (err error) {
-	return self.FindOne(bson.M{"_id": bson.ObjectIdHex(id)}, doc)
+	return self.FindOne(bson.M{"_id": ObjectIdHex(id)}, doc)
 }
 
 func (self *Model) Find(query interface{}) (*mgo.Query, error) {
