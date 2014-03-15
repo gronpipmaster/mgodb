@@ -10,10 +10,12 @@ import (
 	"time"
 )
 
-var zeroVal reflect.Value
-var zeroArgs []reflect.Value
-
-var DbmInstance *Dbm
+var (
+	zeroVal     reflect.Value
+	zeroArgs    []reflect.Value
+	DbmInstance *Dbm
+	debug       bool
+)
 
 type Dbm struct {
 	Database *mgo.Database
@@ -23,7 +25,7 @@ func (self *Dbm) GetInstance() *Dbm {
 	return DbmInstance
 }
 
-func (self *Dbm) Init(connectUrl string, dbName string, timeout time.Duration) error {
+func (self *Dbm) Init(connectUrl string, dbName string, timeout time.Duration, debugReq bool) error {
 	var err error
 	var session *mgo.Session
 	DbmInstance = &Dbm{}
@@ -33,6 +35,7 @@ func (self *Dbm) Init(connectUrl string, dbName string, timeout time.Duration) e
 	}
 	session.SetMode(mgo.Monotonic, true)
 	DbmInstance.Database = session.DB(dbName)
+	debug = debugReq
 	return nil
 }
 

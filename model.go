@@ -161,6 +161,10 @@ func (self *Model) getQueryByFields(queryDoc interface{}) (*mgo.Query, error) {
 
 func docToBson(doc interface{}) (bsonData bson.M, err error) {
 	var tmpBlob []byte
+	if debug {
+		fmt.Print("mgodb.Model debug:")
+		fmt.Printf("%#v\n", doc)
+	}
 	if bsonDoc, ok := doc.(bson.M); ok {
 		return bsonDoc, nil
 	}
