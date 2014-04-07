@@ -160,21 +160,20 @@ func (self *Model) getQueryByFields(queryDoc interface{}) (*mgo.Query, error) {
 }
 
 func docToBson(doc interface{}) (bsonData bson.M, err error) {
+	if bsonData, ok := doc.(bson.M); ok {
+		return bsonData, nil
+	}
 	var tmpBlob []byte
-	if debug {
-		fmt.Print("mgodb.Model debug:")
-		fmt.Printf("%#v\n", doc)
-	}
-	if bsonDoc, ok := doc.(bson.M); ok {
-		return bsonDoc, nil
-	}
 	if tmpBlob, err = bson.Marshal(doc); err != nil {
-		return bsonData, err
+		return
 	}
 	if err = bson.Unmarshal(tmpBlob, &bsonData); err != nil {
-		return bsonData, err
+		return
 	}
-	return bsonData, nil
+	if Debug {
+		fmt.Print("mgodb.Model debug:", fmt.Sprintf("%#v\n", bsonData))
+	}
+	return
 }
 
 func (self *Model) setValues() (err error) {

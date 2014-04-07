@@ -14,7 +14,7 @@ var (
 	zeroVal     reflect.Value
 	zeroArgs    []reflect.Value
 	DbmInstance *Dbm
-	debug       bool
+	Debug       bool
 )
 
 type Dbm struct {
@@ -25,7 +25,7 @@ func (self *Dbm) GetInstance() *Dbm {
 	return DbmInstance
 }
 
-func (self *Dbm) Init(connectUrl string, dbName string, timeout time.Duration, debugReq bool) error {
+func (self *Dbm) Init(connectUrl string, dbName string, timeout time.Duration) error {
 	var err error
 	var session *mgo.Session
 	DbmInstance = &Dbm{}
@@ -35,7 +35,6 @@ func (self *Dbm) Init(connectUrl string, dbName string, timeout time.Duration, d
 	}
 	session.SetMode(mgo.Monotonic, true)
 	DbmInstance.Database = session.DB(dbName)
-	debug = debugReq
 	return nil
 }
 
