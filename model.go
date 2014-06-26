@@ -3,8 +3,8 @@ package mgodb
 import (
 	"errors"
 	"fmt"
-	"labix.org/v2/mgo"
-	"labix.org/v2/mgo/bson"
+	"github.com/gronpipmaster/mgo"
+	"github.com/gronpipmaster/mgo/bson"
 	"reflect"
 )
 
@@ -42,6 +42,8 @@ type Model struct {
 	collectionName string
 	docId          string
 	isNew          bool
+	//Crutch for success encoding gob
+	Tmp *bool `bson:"-" json:"-" xml:"-"`
 }
 
 func (self *Model) SetDoc(doc interface{}) {
