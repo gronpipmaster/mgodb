@@ -42,6 +42,8 @@ type Model struct {
 	collectionName string
 	docId          string
 	isNew          bool
+	//Crutch for success encoding gob
+	Tmp *bool `bson:"-" json:"-" xml:"-"`
 }
 
 func (self *Model) SetDoc(doc interface{}) {
