@@ -4,8 +4,8 @@ import (
 	"encoding/hex"
 	"errors"
 	"fmt"
-	"github.com/gronpipmaster/mgo"
-	"github.com/gronpipmaster/mgo/bson"
+	"gopkg.in/mgo.v2"
+	"gopkg.in/mgo.v2/bson"
 	"reflect"
 	"time"
 )

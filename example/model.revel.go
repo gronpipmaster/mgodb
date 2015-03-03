@@ -3,9 +3,9 @@ package models
 import (
 	"code.google.com/p/go.crypto/bcrypt"
 	"fmt"
-	"github.com/gronpipmaster/mgo/bson"
 	"github.com/gronpipmaster/mgodb"
 	"github.com/robfig/revel"
+	"gopkg.in/mgo.v2/bson"
 	"regexp"
 	"time"
 )
